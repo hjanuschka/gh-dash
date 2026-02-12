@@ -52,7 +52,7 @@ func (g *GitLabProvider) runGlab(args ...string) ([]byte, error) {
 
 	cmd := exec.Command("glab", args...)
 
-	output, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			log.Error("glab command failed", "stderr", string(exitErr.Stderr), "args", args)
@@ -214,13 +214,18 @@ func (g *GitLabProvider) FetchPullRequests(query string, limit int, pageInfo *Pa
 	}
 
 	if state, ok := filters["state"]; ok {
-		args = append(args, "--state", state)
-	} else if strings.Contains(query, "is:open") {
-		args = append(args, "--state", "opened")
-	} else if strings.Contains(query, "is:closed") {
-		args = append(args, "--state", "closed")
-	} else if strings.Contains(query, "is:merged") {
-		args = append(args, "--state", "merged")
+			switch state {
+			case "opened":
+					// no flag needed, opened is default
+			case "closed":
+					args = append(args, "--closed")
+			case "merged":
+					args = append(args, "--merged")
+			case "all":
+					args = append(args, "--all")
+			default:
+					return PullRequestsResponse{}, fmt.Errorf("unknown state: %s", state)
+			}
 	}
 
 	if author, ok := filters["author"]; ok {
@@ -599,11 +604,18 @@ func (g *GitLabProvider) FetchIssues(query string, limit int, pageInfo *PageInfo
 	}
 
 	if state, ok := filters["state"]; ok {
-		args = append(args, "--state", state)
-	} else if strings.Contains(query, "is:open") {
-		args = append(args, "--state", "opened")
-	} else if strings.Contains(query, "is:closed") {
-		args = append(args, "--state", "closed")
+			switch state {
+			case "opened":
+					// no flag needed, opened is default in glab
+			case "closed":
+					args = append(args, "--closed")
+			case "merged":
+					args = append(args, "--merged")
+			case "all":
+					args = append(args, "--all")
+			default:
+					return IssuesResponse{}, fmt.Errorf("unknown state: %s", state)
+			}
 	}
 
 	if author, ok := filters["author"]; ok {
