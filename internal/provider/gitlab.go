@@ -134,17 +134,17 @@ type glabMergeRequest struct {
 	Reviewers []struct {
 		Username string `json:"username"`
 	} `json:"reviewers"`
-	Labels               []string `json:"labels"`
-	UserNotesCount       int      `json:"user_notes_count"`
-	MergeStatus          string   `json:"merge_status"`
-	HasConflicts         bool     `json:"has_conflicts"`
-	BlockingDiscussions  int      `json:"blocking_discussions_resolved_count"`
-	ChangesCount         string   `json:"changes_count"`
-	DiffRefs             struct{} `json:"diff_refs"`
-	ProjectID            int      `json:"project_id"`
-	SourceProjectID      int      `json:"source_project_id"`
-	TargetProjectID      int      `json:"target_project_id"`
-	References           struct {
+	Labels              []string `json:"labels"`
+	UserNotesCount      int      `json:"user_notes_count"`
+	MergeStatus         string   `json:"merge_status"`
+	HasConflicts        bool     `json:"has_conflicts"`
+	BlockingDiscussions int      `json:"blocking_discussions_resolved_count"`
+	ChangesCount        string   `json:"changes_count"`
+	DiffRefs            struct{} `json:"diff_refs"`
+	ProjectID           int      `json:"project_id"`
+	SourceProjectID     int      `json:"source_project_id"`
+	TargetProjectID     int      `json:"target_project_id"`
+	References          struct {
 		Full string `json:"full"`
 	} `json:"references"`
 	Pipeline *struct {
@@ -319,11 +319,12 @@ func (g *GitLabProvider) convertMRtoPR(mr glabMergeRequest) PullRequestData {
 	}
 
 	state := mr.State
-	if state == "opened" {
+	switch state {
+	case "opened":
 		state = "OPEN"
-	} else if state == "merged" {
+	case "merged":
 		state = "MERGED"
-	} else if state == "closed" {
+	case "closed":
 		state = "CLOSED"
 	}
 
@@ -417,10 +418,10 @@ func (g *GitLabProvider) FetchPullRequest(prUrl string) (EnrichedPullRequestData
 	comments := CommentsWithBody{TotalCount: mr.UserNotesCount}
 	if err == nil && len(notesOutput) > 0 {
 		var notes []struct {
-			Body      string    `json:"body"`
+			Body      string                    `json:"body"`
 			Author    struct{ Username string } `json:"author"`
-			CreatedAt time.Time `json:"created_at"`
-			System    bool      `json:"system"` // Filter out system notes
+			CreatedAt time.Time                 `json:"created_at"`
+			System    bool                      `json:"system"` // Filter out system notes
 		}
 		if json.Unmarshal(notesOutput, &notes) == nil {
 			for _, note := range notes {
@@ -679,9 +680,10 @@ func (g *GitLabProvider) convertGitLabIssue(issue glabIssue) IssueData {
 	}
 
 	state := issue.State
-	if state == "opened" {
+	switch state {
+	case "opened":
 		state = "OPEN"
-	} else if state == "closed" {
+	case "closed":
 		state = "CLOSED"
 	}
 
@@ -787,10 +789,10 @@ func (g *GitLabProvider) FetchIssueComments(issueUrl string) ([]IssueComment, er
 	var comments []IssueComment
 	if len(notesOutput) > 0 {
 		var notes []struct {
-			Body      string    `json:"body"`
+			Body      string                    `json:"body"`
 			Author    struct{ Username string } `json:"author"`
-			CreatedAt time.Time `json:"created_at"`
-			System    bool      `json:"system"`
+			CreatedAt time.Time                 `json:"created_at"`
+			System    bool                      `json:"system"`
 		}
 		if err := json.Unmarshal(notesOutput, &notes); err != nil {
 			return nil, err
